@@ -11,14 +11,14 @@ import com.avatech.msfalcos.App;
  * Created by jventiades on 5/16/2018.
  */
 
-public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Param,T,Result> {//
+public class ProgressAsync<Param,Progress ,Result> extends AsyncTask<Param,Progress,Result> {//
 
     private ProgressDialog progressDialog;
     private Context context;
     private String message;
     private OnBackground<Result,Param> onBackgroundListener;
     private OnPost<Result> onPostListener;
-    private OnProgress<T> onProgressListener;
+    private OnProgress<Progress> onProgressListener;
     private OnCancelled onCancelledListener;
     private OnPre onPreListener;
     private boolean hideProgressDialog;
@@ -39,6 +39,12 @@ public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Para
     public ProgressAsync(Context activity, String message, OnBackground<Result,Param> onBackgroundListener, OnPost<Result> onPostListener) {
         this.context = activity;
         this.message = message;
+        this.onBackgroundListener = onBackgroundListener;
+        this.onPostListener = onPostListener;
+    }
+
+    public ProgressAsync(Context activity, OnBackground<Result,Param> onBackgroundListener, OnPost<Result> onPostListener) {
+        this.context = activity;
         this.onBackgroundListener = onBackgroundListener;
         this.onPostListener = onPostListener;
     }
@@ -66,19 +72,24 @@ public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Para
 
     @Override
     protected void onPostExecute(Result result) {
-        if (onPostListener!=null) {
-            onPostListener.execute(result);
-        }
+
         if(progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
+        }
+        if (onPostListener!=null) {
+            onPostListener.execute(result);
         }
     }
 
     @SafeVarargs
     @Override
-    protected final void onProgressUpdate(T... values) {
+    protected final void onProgressUpdate(Progress... values) {
         if(onProgressListener != null){
+            if (values.length == 0){
+                onProgressListener.execute(null);
+            } else {
                 onProgressListener.execute(values);
+            }
         }
     }
 
@@ -101,8 +112,8 @@ public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Para
     public interface OnPost<Result>{
         void execute(Result result);
     }
-    public interface OnProgress<T extends Object>{
-        void execute(T... progresses);
+    public interface OnProgress<Progress>{
+        void execute(Progress... progresses);
     }
     public interface OnCancelled{
         void execute();
@@ -110,12 +121,12 @@ public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Para
 
 
     @SafeVarargs
-    public final void progress(T... type){
+    public final void progress(Progress... type){
         super.publishProgress(type);
     }
 
     public void progress(){
-        super.publishProgress(null);
+        super.publishProgress();
     }
 
 
@@ -127,7 +138,7 @@ public class ProgressAsync<Param,T extends Object,Result> extends AsyncTask<Para
         this.onPostListener = onPostListener;
     }
 
-    public void setOnProgressListener(OnProgress<T> onProgressListener) {
+    public void setOnProgressListener(OnProgress<Progress> onProgressListener) {
         this.onProgressListener = onProgressListener;
     }
 
